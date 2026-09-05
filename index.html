@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Winter Arc</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg: #0C0A1E;
+    --glass: rgba(255,255,255,0.05);
+    --glass-hi: rgba(255,255,255,0.09);
+    --brd: rgba(255,255,255,0.09);
+    --brd-hi: rgba(255,255,255,0.16);
+    --text: #F7F4FF;
+    --text-dim: #B2A8D6;
+    --text-faint: #726A93;
+
+    --violet: #8B5CF6;
+    --violet2: #C4B5FD;
+    --pink: #FF4FA3;
+    --cyan: #22E0E0;
+    --lime: #C6FF3D;
+    --flame1: #FF8A4C;
+    --flame2: #FF3EA5;
+
+    --grad-brand: linear-gradient(120deg, var(--violet) 0%, var(--pink) 55%, #FF8A4C 100%);
+    --grad-cool: linear-gradient(120deg, var(--cyan) 0%, var(--violet) 100%);
+    --grad-fire: linear-gradient(120deg, var(--flame1) 0%, var(--flame2) 100%);
+    --grad-lime: linear-gradient(120deg, var(--lime) 0%, #4ADE80 100%);
+
+    --r-lg: 22px;
+    --r-md: 16px;
+    --r-sm: 12px;
+    --r-pill: 999px;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height:100vh;
+    overscroll-behavior-y: none;
+  }
+  h1,h2,h3,.num,.display{ font-family: 'Fredoka', 'Plus Jakarta Sans', sans-serif; }
+  button, input, select{ font-family: inherit; }
+  button{ cursor:pointer; }
+
+  #root{
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display:flex; flex-direction:column;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .blob{
+    position: fixed; border-radius: 50%; filter: blur(70px); opacity:.55; pointer-events:none; z-index:0;
+    animation: float 14s ease-in-out infinite;
+  }
+  .blob1{ width:280px; height:280px; background: var(--violet); top:-90px; left:-90px; }
+  .blob2{ width:260px; height:260px; background: var(--pink); top:220px; right:-110px; animation-delay: -5s; }
+  .blob3{ width:240px; height:240px; background: var(--cyan); bottom:-100px; left:-60px; opacity:.35; animation-delay: -9s; }
+  @keyframes float{
+    0%,100%{ transform: translate(0,0) scale(1); }
+    50%{ transform: translate(14px,-18px) scale(1.06); }
+  }
+  @media (prefers-reduced-motion: reduce){ .blob{ animation:none; } }
+
+  /* ---------- header ---------- */
+  header.app-head{ position:relative; z-index:2; padding: 24px 20px 14px; }
+  .brand-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .brand-title{
+    font-size: 24px; font-weight:700; margin:0; letter-spacing:-0.01em;
+    display:flex; align-items:center; gap:8px;
+  }
+  .brand-title input{
+    background: transparent; border:none; padding:0; width:100%;
+    font: inherit; font-size:24px; font-weight:700; letter-spacing:-0.01em;
+    background-image: var(--grad-brand);
+    -webkit-background-clip: text; background-clip:text; color:transparent;
+    caret-color: var(--pink);
+  }
+  .head-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .settings-btn{
+    background: var(--glass); border:1px solid var(--brd); color:var(--text);
+    width:38px; height:38px; border-radius: var(--r-pill); font-size:16px;
+    display:flex; align-items:center; justify-content:center; backdrop-filter: blur(10px);
+    flex-shrink:0;
+  }
+  .settings-btn:active{ background: var(--glass-hi); transform: scale(.94); }
+  .account-chip{
+    display:flex; align-items:center; gap:6px; background: var(--glass); border:1px solid var(--brd);
+    border-radius: var(--r-pill); padding: 4px 10px 4px 4px; backdrop-filter: blur(10px);
+  }
+  .account-chip img{ width:24px; height:24px; border-radius:50%; display:block; }
+  .account-chip span{ font-size:11.5px; font-weight:700; color:var(--text-dim); max-width:70px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sub{ color:var(--text-dim); font-size:13.5px; margin-top:6px; font-weight:500; }
+
+  /* ---------- main ---------- */
+  main{ position:relative; z-index:2; flex:1; overflow-y:auto; padding: 8px 18px 110px; }
+  .card{ background: var(--glass); border:1px solid var(--brd); border-radius: var(--r-lg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+  /* ---------- arc hero ---------- */
+  .arc-hero{ display:flex; align-items:center; gap:16px; padding: 20px 18px; margin: 10px 0 18px; }
+  .arc-wrap{ position:relative; width:126px; height:76px; flex-shrink:0; }
+  .arc-wrap svg{ width:100%; height:100%; display:block; filter: drop-shadow(0 0 10px rgba(139,92,246,.55)); }
+  .arc-center{ position:absolute; left:0; right:0; bottom:0; text-align:center; }
+  .arc-day{ font-size:30px; font-weight:700; line-height:1; background-image: var(--grad-brand); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .arc-total{ font-size:11px; color:var(--text-faint); margin-top:2px; font-weight:600; }
+  .arc-meta{ flex:1; min-width:0; }
+  .arc-meta-row{ display:flex; justify-content:space-between; font-size:13px; color:var(--text-dim); padding:4px 0; font-weight:500; }
+  .arc-meta-row b{ color:var(--text); font-weight:700; }
+  .hype{ font-size:12.5px; font-weight:600; margin-top:6px; padding: 5px 10px; border-radius: var(--r-pill); display:inline-block; background: var(--grad-fire); color:#1A0A08; }
+
+  .section-label{ font-size:13.5px; color:var(--text-dim); margin: 6px 2px 12px; font-weight:700; }
+
+  /* ---------- stat grid ---------- */
+  .stat-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:22px; }
+  .stat-cell{ padding: 14px 8px; text-align:center; }
+  .stat-chip{ width:30px; height:30px; border-radius: var(--r-sm); margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .stat-num{ font-size:20px; font-weight:700; font-family:'Fredoka',sans-serif; }
+  .stat-lbl{ font-size:10.5px; color:var(--text-dim); margin-top:3px; font-weight:600; }
+
+  /* ---------- habit rows (dashboard) ---------- */
+  .habit-row{ display:flex; align-items:center; gap:12px; padding: 13px 14px; margin-bottom:10px; transition: transform .15s ease; }
+  .habit-row:active{ transform: scale(.98); }
+  .habit-check{
+    width:32px; height:32px; border-radius: var(--r-pill); flex-shrink:0;
+    border: 2px solid var(--brd-hi); background: rgba(255,255,255,0.03);
+    display:flex; align-items:center; justify-content:center; font-size:15px; color:transparent;
+    transition: all .18s ease; position:relative;
+  }
+  .habit-check.done{ background: var(--grad-fire); border-color: transparent; color:#1A0A08; box-shadow: 0 0 16px rgba(255,62,165,.55); }
+  .habit-check.pop{ animation: popCheck .45s ease; }
+  @keyframes popCheck{ 0%{transform:scale(1);} 45%{transform:scale(1.4) rotate(-8deg);} 100%{transform:scale(1);} }
+  .sparkle-fx{ position:absolute; left:50%; top:0; transform:translate(-50%,0); font-size:16px; pointer-events:none; animation: sparkleUp .65s ease forwards; }
+  @keyframes sparkleUp{ 0%{ opacity:1; transform:translate(-50%,0) scale(.7);} 100%{ opacity:0; transform:translate(-50%,-30px) scale(1.2);} }
+
+  .habit-emoji{ width:36px; height:36px; border-radius: var(--r-sm); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .habit-name{ flex:1; font-size:15px; font-weight:600; min-width:0; }
+  .habit-streak{ font-size:13px; color: var(--flame1); font-weight:700; min-width:32px; text-align:right; }
+  .habit-streak.zero{ color: var(--text-faint); font-weight:500; }
+
+  .empty-state{ padding: 34px 16px; text-align:center; color:var(--text-dim); font-size:14px; font-weight:500; }
+  .empty-state a{ color: var(--cyan); cursor:pointer; text-decoration:underline; font-weight:700; }
+
+  /* ---------- habits tab ---------- */
+  .habit-edit-row{ display:flex; align-items:center; gap:10px; padding: 12px 14px; margin-bottom:10px; }
+  .habit-edit-row .habit-name{ font-size:14.5px; }
+  .streak-sub{ color:var(--text-faint); font-size:11px; margin-top:2px; font-weight:500; }
+  .reorder-col{ display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+  .reorder-btn{
+    width:24px; height:20px; background: rgba(255,255,255,.06); border:1px solid var(--brd-hi); color:var(--text-dim);
+    border-radius:6px; font-size:11px; display:flex; align-items:center; justify-content:center;
+  }
+  .reorder-btn:active{ background: var(--glass-hi); }
+  .reorder-btn:disabled{ opacity:.25; }
+  .edit-btn{
+    background: var(--glass-hi); border:1px solid var(--brd-hi); color:var(--text);
+    padding: 8px 13px; border-radius: var(--r-pill); font-size:12px; font-weight:700; flex-shrink:0;
+  }
+  .edit-btn:active{ transform: scale(.94); }
+  .lock-tag{ font-size:9.5px; color:var(--text-faint); font-weight:700; display:flex; align-items:center; gap:2px; }
+
+  .add-habit-btn{
+    width:100%; margin-top:6px; padding: 15px; background: var(--glass);
+    border: 2px dashed var(--brd-hi); color: var(--text); border-radius: var(--r-lg);
+    font-size:14.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .add-habit-btn:active{ background: var(--glass-hi); transform: scale(.98); }
+
+  /* ---------- form sheet ---------- */
+  .overlay{
+    position:fixed; inset:0; background: rgba(6,4,16,.78); backdrop-filter: blur(4px);
+    display:flex; align-items:flex-end; justify-content:center; z-index: 40; opacity:0; pointer-events:none; transition: opacity .2s ease;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    width:100%; max-width:480px; background: #150F2C;
+    border: 1px solid var(--brd-hi); border-bottom:none;
+    border-radius: 26px 26px 0 0;
+    padding: 22px 20px calc(26px + env(safe-area-inset-bottom));
+    transform: translateY(16px); transition: transform .2s ease;
+    box-shadow: 0 -20px 60px rgba(139,92,246,.15);
+  }
+  .overlay.open .sheet{ transform: translateY(0); }
+  .sheet h3{ margin:0 0 4px; font-size:19px; font-weight:700; }
+  .sheet p.hint{ color:var(--text-dim); font-size:13px; margin: 4px 0 16px; font-weight:500; }
+  .field{ margin-bottom: 14px; }
+  .field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; font-weight:700; }
+  .field input, .field select{
+    width:100%; background: rgba(255,255,255,.05); border:1.5px solid var(--brd-hi);
+    color:var(--text); padding: 12px 14px; border-radius: var(--r-md); font-size:15px; font-weight:600;
+  }
+  .field input:focus, .field select:focus{ outline:none; border-color: var(--violet); }
+  .field-err{ color: var(--pink); font-size:11.5px; font-weight:700; margin-top:5px; display:none; }
+  .field-err.show{ display:block; }
+  .emoji-grid{ display:grid; grid-template-columns: repeat(6,1fr); gap:8px; }
+  .emoji-opt{ background: rgba(255,255,255,.05); border:1.5px solid var(--brd-hi); border-radius: var(--r-sm); font-size:19px; padding:9px 0; display:flex; align-items:center; justify-content:center; }
+  .emoji-opt.sel{ border-color: var(--violet); background: rgba(139,92,246,.18); box-shadow: 0 0 0 3px rgba(139,92,246,.22); }
+  .sheet-actions{ display:flex; gap:10px; margin-top:18px; }
+  .btn{ flex:1; padding:14px; border-radius: var(--r-pill); font-size:14.5px; font-weight:700; border:1.5px solid transparent; }
+  .btn-primary{ background: var(--grad-brand); color:#1A0A18; }
+  .btn-primary:active{ transform: scale(.97); }
+  .btn-ghost{ background: rgba(255,255,255,.05); border-color: var(--brd-hi); color:var(--text-dim); }
+  .btn-ghost:active{ background: rgba(255,255,255,.09); }
+  .btn-danger{ background: rgba(255,62,165,.08); border-color: rgba(255,62,165,.4); color: var(--pink); }
+  .btn-danger:active{ background: rgba(255,62,165,.16); }
+
+  /* ---------- stats tab ---------- */
+  .weekbars{ display:flex; align-items:flex-end; gap:9px; height:120px; padding: 10px 4px 0; }
+  .weekbar-col{ flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; gap:6px; }
+  .weekbar-track{ width:100%; height:100%; display:flex; align-items:flex-end; background: rgba(255,255,255,.05); border-radius: 10px; overflow:hidden; border:1px solid var(--brd); }
+  .weekbar-fill{ width:100%; background: var(--grad-brand); border-radius: 10px 10px 0 0; transition: height .35s ease; box-shadow: 0 0 12px rgba(255,79,163,.35); }
+  .weekbar-lbl{ font-size:10.5px; color:var(--text-faint); font-weight:700; }
+  .weekbar-pct{ font-size:10.5px; color:var(--text-dim); font-weight:700; }
+
+  .heatmap{ display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+  .heat-dow{ font-size:10px; color:var(--text-faint); text-align:center; padding-bottom:4px; font-weight:700; }
+  .heat-cell{ aspect-ratio: 1; border-radius: 8px; background: rgba(255,255,255,.05); border:1px solid var(--brd); display:flex; align-items:center; justify-content:center; font-size:9.5px; color: var(--text-faint); font-weight:600; }
+  .heat-cell.future{ opacity:.3; }
+
+  /* ---------- leaderboard tab ---------- */
+  .leaderboard-row{ display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:10px; }
+  .lb-rank{ font-size:14px; width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; background: rgba(255,255,255,.06); color:var(--text-dim); }
+  .lb-rank.top1{ background: var(--grad-fire); color:#1A0A08; }
+  .lb-rank.top2{ background: linear-gradient(120deg,#C4B5FD,#8B5CF6); color:#1A0A18; }
+  .lb-rank.top3{ background: linear-gradient(120deg,#FDE68A,#F59E0B); color:#1A0A18; }
+  .lb-name{ flex:1; font-size:14.5px; font-weight:600; min-width:0; }
+  .lb-nums{ text-align:right; font-size:11.5px; color:var(--text-dim); font-weight:600; }
+  .lb-nums b{ color: var(--flame1); font-size:15px; font-family:'Fredoka',sans-serif; }
+
+  /* ---------- promo bar ---------- */
+  .promo-bar{ position:relative; z-index:2; padding: 12px 18px; }
+  .promo-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px; width:100%; text-align:center; padding: 15px; border-radius: var(--r-pill);
+    background: var(--grad-brand); background-size: 200% 200%;
+    color:#1A0A10; font-size: 14.5px; font-weight:800; letter-spacing:-0.01em;
+    text-decoration:none; box-shadow: 0 6px 22px rgba(255,79,163,.35); animation: shimmer 6s ease infinite;
+  }
+  .promo-btn:active{ transform: scale(.97); }
+  @keyframes shimmer{ 0%,100%{ background-position: 0% 50%; } 50%{ background-position: 100% 50%; } }
+  @media (prefers-reduced-motion: reduce){ .promo-btn{ animation:none; } }
+
+  /* ---------- bottom nav ---------- */
+  nav.tabbar{
+    position:sticky; bottom:0; left:0; right:0; z-index:20; display:flex; gap:4px;
+    background: rgba(21,15,44,.85); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    border-top: 1px solid var(--brd); padding: 9px 8px calc(9px + env(safe-area-inset-bottom));
+  }
+  .tab-btn{
+    flex:1; background:none; border:none; color: var(--text-faint);
+    display:flex; flex-direction:column; align-items:center; gap:3px; padding: 7px 0; font-size:10.5px; font-weight:700; border-radius: var(--r-md);
+    transition: all .15s ease;
+  }
+  .tab-btn .ic{ font-size:17px; line-height:1; }
+  .tab-btn.active{ color: var(--text); background: rgba(255,255,255,.06); }
+  .tab-btn.active .ic{ filter: drop-shadow(0 0 6px rgba(139,92,246,.7)); }
+  .tab-btn:active{ transform: scale(.94); }
+
+  .loading-msg{ padding: 70px 20px; text-align:center; color:var(--text-dim); font-size:14px; font-weight:600; position:relative; z-index:2; }
+  ::-webkit-scrollbar{ width:0; height:0; }
+
+  /* ---------- sign-in gate ---------- */
+  .gate{
+    position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse 120% 80% at 50% -10%, #1a1240 0%, var(--bg) 60%); padding: 24px;
+  }
+  .gate-card{ max-width:360px; width:100%; text-align:center; }
+  .gate-emoji{ font-size:44px; margin-bottom:6px; }
+  .gate-card h2{ font-size:24px; font-weight:700; margin:0 0 8px; background-image: var(--grad-brand); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .gate-card p{ color:var(--text-dim); font-size:14px; font-weight:500; margin:0 0 26px; line-height:1.5; }
+  .google-btn{
+    display:flex; align-items:center; justify-content:center; gap:10px; width:100%;
+    background:#fff; color:#1F1F1F; border:none; border-radius: var(--r-pill); padding:14px; font-size:14.5px; font-weight:700;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+  .google-btn:active{ transform: scale(.97); }
+  .gate-note{ color:var(--pink); font-size:12.5px; font-weight:600; margin-top:14px; min-height:16px; }
+  .gate-setup{ color:var(--text-faint); font-size:11.5px; margin-top:22px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+
+  <header class="app-head">
+    <div class="brand-row">
+      <h1 class="brand-title">❄️ <input id="title-input" maxlength="30" /></h1>
+      <div class="head-actions" id="head-actions">
+        <button class="settings-btn" id="settings-btn" title="Arc settings">⚙️</button>
+      </div>
+    </div>
+    <div class="sub" id="head-sub">loading…</div>
+  </header>
+
+  <main id="main">
+    <div class="loading-msg">Getting your arc ready… ✨</div>
+  </main>
+
+  <div class="promo-bar">
+    <a class="promo-btn" href="https://www.stockmarketcoachingindia.com" target="_blank" rel="noopener noreferrer">🚀 Build Your Dreams - Join Now</a>
+  </div>
+
+  <nav class="tabbar">
+    <button class="tab-btn" data-tab="dashboard"><span class="ic">◐</span>Dashboard</button>
+    <button class="tab-btn" data-tab="habits"><span class="ic">✎</span>Habits</button>
+    <button class="tab-btn" data-tab="stats"><span class="ic">▤</span>Stats</button>
+    <button class="tab-btn" data-tab="leaderboard"><span class="ic">🏆</span>Leaders</button>
+  </nav>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div class="gate" id="signin-gate" style="display:none;">
+  <div class="gate-card">
+    <div class="gate-emoji">❄️</div>
+    <h2>Winter Arc</h2>
+    <p>Sign in with Google to save your habits and streaks to your account, synced across every device.</p>
+    <button class="google-btn" id="google-signin-btn">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+        <path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/>
+        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.580z"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <div class="gate-note" id="gate-error"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============================================================
+  // OPTIONAL: Google Sign-In + autosave (for deploying on your own site)
+  // Paste your Firebase project config below and set FIREBASE project
+  // up with Google as a sign-in provider + Firestore enabled.
+  // Leave this untouched to keep running in local/demo mode (works
+  // right here in Claude with automatic per-account saving already).
+  // ============================================================
+  var firebaseConfig = {
+    apiKey: "AIzaSyAmP83ylLaOGzenvaHLll1LHKTRUDzzpGA",
+    authDomain: "winter-arc-cd651.firebaseapp.com",
+    projectId: "winter-arc-cd651",
+    storageBucket: "winter-arc-cd651.firebasestorage.app",
+    messagingSenderId: "780467767743",
+    appId: "1:780467767743:web:40d5de6b88cd9ac3bef90a"
+  };
+  var FIREBASE_ENABLED = !!(firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf("YOUR_") !== 0);
+  var fbApi = null;
+  var currentUser = null;
+
+  async function initFirebase(){
+    try {
+      var appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      var authMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+      var storeMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      var app = appMod.initializeApp(firebaseConfig);
+      var auth = authMod.getAuth(app);
+      var db = storeMod.getFirestore(app);
+      return {
+        auth: auth, db: db,
+        GoogleAuthProvider: authMod.GoogleAuthProvider,
+        signInWithPopup: authMod.signInWithPopup,
+        onAuthStateChanged: authMod.onAuthStateChanged,
+        signOut: authMod.signOut,
+        doc: storeMod.doc, getDoc: storeMod.getDoc, setDoc: storeMod.setDoc
+      };
+    } catch(e){ console.error("Firebase init failed", e); return null; }
+  }
+
+  // ---------- constants ----------
+  var EMOJI_CHOICES = ["🔥","💧","📖","🏋️","🧘","🥶","🚫","🛌","☀️","✍️","🥗","🚶","🏃","🍔"];
+  var CHIP_GRADS = [
+    "linear-gradient(120deg,#8B5CF6,#FF4FA3)",
+    "linear-gradient(120deg,#22E0E0,#8B5CF6)",
+    "linear-gradient(120deg,#FF8A4C,#FF3EA5)",
+    "linear-gradient(120deg,#C6FF3D,#4ADE80)",
+    "linear-gradient(120deg,#FDE68A,#F59E0B)",
+    "linear-gradient(120deg,#60A5FA,#8B5CF6)"
+  ];
+  var HYPE_LOW = ["Let's get it 🚀","New day, new gains","Start your streak"];
+  var HYPE_MID = ["You're cooking 🔥","Keep the streak alive","Halfway there — go"];
+  var HYPE_HIGH = ["You're on fire 🔥🔥","Absolutely built different","No cap, elite mode"];
+  var DOW = ["S","M","T","W","T","F","S"];
+  var K_HABITS = "winterarc_habits";
+  var K_COMPLETIONS = "winterarc_completions";
+  var K_CONFIG = "winterarc_config";
+
+  // ---------- state ----------
+  var state = {
+    habits: [],
+    completions: {},
+    config: { title: "Winter Arc", startDate: "2026-10-01", endDate: "2026-12-31" },
+    tab: "dashboard"
+  };
+  var saveTimer = null;
+  var editingHabitId = null;
+  var pendingEmoji = EMOJI_CHOICES[0];
+
+  // ---------- date helpers ----------
+  function pad(n){ return n < 10 ? "0"+n : ""+n; }
+  function fmt(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function todayStr(){ return fmt(new Date()); }
+  function addDays(d, n){ var r = new Date(d); r.setDate(r.getDate()+n); return r; }
+  function parseDate(s){ var p = s.split("-"); return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2])); }
+  function dayLabel(d){ return DOW[d.getDay()]; }
+  function chipGrad(i){ return CHIP_GRADS[i % CHIP_GRADS.length]; }
+  function toDMY(iso){ var p = iso.split("-"); return p[2]+"-"+p[1]+"-"+p[0]; }
+  function toISO(dmy){
+    var m = (dmy||"").trim().match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if (!m) return null;
+    var dd = parseInt(m[1],10), mm = parseInt(m[2],10), yyyy = parseInt(m[3],10);
+    var d = new Date(yyyy, mm-1, dd);
+    if (d.getFullYear() !== yyyy || d.getMonth() !== mm-1 || d.getDate() !== dd) return null;
+    return yyyy + "-" + pad(mm) + "-" + pad(dd);
+  }
+
+  // ---------- default habit set (undeletable) ----------
+  function seedHabits(){
+    return [
+      { id: "h_cold_shower",  name: "Cold shower",     emoji: "🥶" },
+      { id: "h_read",         name: "Read 15 pages",   emoji: "📖" },
+      { id: "h_no_sugar",     name: "No sugar",        emoji: "🚫" },
+      { id: "h_sleep",        name: "Sleep – 6 hours",  emoji: "🛌" },
+      { id: "h_workout",      name: "Workout",         emoji: "🏋️" },
+      { id: "h_meditation",   name: "Meditation",      emoji: "🧘" },
+      { id: "h_running",      name: "Running",         emoji: "🏃" },
+      { id: "h_no_junk",      name: "No Junk",         emoji: "🍔" }
+    ];
+  }
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- storage ----------
+  async function loadFromWindowStorage(){
+    try {
+      var h = await window.storage.get(K_HABITS);
+      if (h && h.value) state.habits = JSON.parse(h.value);
+    } catch(e) { state.habits = []; }
+    if (!state.habits || state.habits.length === 0) state.habits = seedHabits();
+
+    try {
+      var c = await window.storage.get(K_COMPLETIONS);
+      if (c && c.value) state.completions = JSON.parse(c.value);
+    } catch(e) { state.completions = {}; }
+
+    try {
+      var cfg = await window.storage.get(K_CONFIG);
+      if (cfg && cfg.value) state.config = Object.assign(state.config, JSON.parse(cfg.value));
+    } catch(e) { /* keep defaults */ }
+  }
+
+  async function loadFromFirestore(){
+    var ref = fbApi.doc(fbApi.db, "winterArcUsers", currentUser.uid);
+    try {
+      var snap = await fbApi.getDoc(ref);
+      if (snap.exists()) {
+        var data = snap.data();
+        state.habits = (data.habits && data.habits.length) ? data.habits : seedHabits();
+        state.completions = data.completions || {};
+        state.config = Object.assign(state.config, data.config || {});
+      } else {
+        state.habits = seedHabits();
+        state.completions = {};
+        await persist();
+      }
+    } catch(e){
+      console.error("Firestore load failed", e);
+      state.habits = seedHabits();
+    }
+  }
+
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){ persist(); }, 350);
+  }
+
+  async function persist(){
+    if (fbApi && currentUser) {
+      try {
+        await fbApi.setDoc(
+          fbApi.doc(fbApi.db, "winterArcUsers", currentUser.uid),
+          { habits: state.habits, completions: state.completions, config: state.config, updatedAt: Date.now() },
+          { merge: true }
+        );
+      } catch(e){ console.error("Firestore save failed", e); }
+    } else {
+      try {
+        await window.storage.set(K_HABITS, JSON.stringify(state.habits));
+        await window.storage.set(K_COMPLETIONS, JSON.stringify(state.completions));
+        await window.storage.set(K_CONFIG, JSON.stringify(state.config));
+      } catch(e){ console.error("save failed", e); }
+    }
+  }
+
+  // ---------- streak logic ----------
+  function currentStreak(habitId){
+    var streak = 0, cursor = new Date(), first = true, guard = 0;
+    while (guard < 3660) {
+      guard++;
+      var ds = fmt(cursor);
+      var done = !!(state.completions[ds] && state.completions[ds][habitId]);
+      if (done) { streak++; }
+      else if (first && ds === todayStr()) { /* today not marked yet — don't break */ }
+      else { break; }
+      first = false;
+      cursor = addDays(cursor, -1);
+    }
+    return streak;
+  }
+
+  function bestStreak(habitId){
+    var dates = Object.keys(state.completions).filter(function(d){
+      return state.completions[d] && state.completions[d][habitId];
+    }).sort();
+    if (dates.length === 0) return 0;
+    var best = 1, run = 1;
+    for (var i = 1; i < dates.length; i++) {
+      var diff = Math.round((parseDate(dates[i]) - parseDate(dates[i-1])) / 86400000);
+      run = (diff === 1) ? run + 1 : 1;
+      if (run > best) best = run;
+    }
+    return best;
+  }
+
+  function todayCompletionCount(){
+    var rec = state.completions[todayStr()] || {};
+    var count = 0;
+    state.habits.forEach(function(h){ if (rec[h.id]) count++; });
+    return count;
+  }
+
+  function dayCompletionPct(dateStr){
+    if (state.habits.length === 0) return 0;
+    var rec = state.completions[dateStr] || {};
+    var count = 0;
+    state.habits.forEach(function(h){ if (rec[h.id]) count++; });
+    return Math.round((count / state.habits.length) * 100);
+  }
+
+  function toggleToday(habitId, btnEl){
+    var t = todayStr();
+    if (!state.completions[t]) state.completions[t] = {};
+    var willBeDone = !state.completions[t][habitId];
+    state.completions[t][habitId] = willBeDone;
+    if (!willBeDone) delete state.completions[t][habitId];
+    scheduleSave();
+    if (willBeDone && btnEl) popEffect(btnEl);
+    render();
+  }
+
+  function popEffect(btnEl){
+    btnEl.classList.add("pop");
+    var spark = document.createElement("span");
+    spark.className = "sparkle-fx";
+    spark.textContent = "✨";
+    btnEl.appendChild(spark);
+    setTimeout(function(){ spark.remove(); }, 650);
+  }
+
+  function moveHabit(habitId, dir){
+    var idx = state.habits.findIndex(function(h){ return h.id === habitId; });
+    var swapWith = idx + dir;
+    if (idx < 0 || swapWith < 0 || swapWith >= state.habits.length) return;
+    var tmp = state.habits[idx];
+    state.habits[idx] = state.habits[swapWith];
+    state.habits[swapWith] = tmp;
+    scheduleSave();
+    render();
+  }
+
+  // ---------- arc math ----------
+  function arcTotalDays(){
+    var s = parseDate(state.config.startDate), e = parseDate(state.config.endDate);
+    return Math.max(1, Math.round((e - s) / 86400000) + 1);
+  }
+  function arcDayIndex(){
+    var s = parseDate(state.config.startDate), now = parseDate(todayStr());
+    return Math.round((now - s) / 86400000) + 1;
+  }
+  function hypeLine(pct){
+    if (pct >= 80) return HYPE_HIGH[Math.floor(Math.random()*HYPE_HIGH.length)];
+    if (pct >= 40) return HYPE_MID[Math.floor(Math.random()*HYPE_MID.length)];
+    return HYPE_LOW[Math.floor(Math.random()*HYPE_LOW.length)];
+  }
+
+  // ---------- render: shell ----------
+  function render(){
+    document.getElementById("title-input").value = state.config.title;
+    var total = arcTotalDays();
+    var idx = Math.max(1, Math.min(arcDayIndex(), total));
+    var remain = Math.max(0, total - arcDayIndex());
+    document.getElementById("head-sub").textContent =
+      arcDayIndex() < 1 ? "Starts " + toDMY(state.config.startDate) :
+      (remain > 0 ? "Day " + idx + " of " + total + " · " + remain + " to go" : "Arc complete — legendary 🏆");
+
+    document.querySelectorAll(".tab-btn").forEach(function(b){
+      b.classList.toggle("active", b.dataset.tab === state.tab);
+    });
+
+    var main = document.getElementById("main");
+    if (state.tab === "dashboard") main.innerHTML = renderDashboard();
+    else if (state.tab === "habits") main.innerHTML = renderHabitsTab();
+    else if (state.tab === "stats") main.innerHTML = renderStatsTab();
+    else main.innerHTML = renderLeaderboardTab();
+
+    attachMainListeners();
+  }
+
+  // ---------- dashboard ----------
+  function renderDashboard(){
+    var total = arcTotalDays();
+    var idx = arcDayIndex();
+    var pct = Math.max(0, Math.min(1, idx / total));
+    var arcSvg = buildArc(pct, idx, total);
+
+    var doneToday = todayCompletionCount();
+    var totalHabits = state.habits.length;
+    var pctToday = totalHabits ? Math.round((doneToday/totalHabits)*100) : 0;
+    var bestOfAll = state.habits.reduce(function(m,h){ return Math.max(m, bestStreak(h.id)); }, 0);
+
+    var rows = state.habits.map(function(h, i){
+      var done = !!(state.completions[todayStr()] && state.completions[todayStr()][h.id]);
+      var streak = currentStreak(h.id);
+      return '<div class="card habit-row">' +
+        '<button class="habit-check ' + (done ? "done" : "") + '" data-toggle="' + h.id + '">' + (done ? "✓" : "") + '</button>' +
+        '<div class="habit-emoji" style="background:' + chipGrad(i) + '">' + h.emoji + '</div>' +
+        '<div class="habit-name">' + escapeHtml(h.name) + '</div>' +
+        '<div class="habit-streak ' + (streak === 0 ? "zero" : "") + '">' + streak + (streak ? " 🔥" : "") + '</div>' +
+        '</div>';
+    }).join("");
+
+    if (totalHabits === 0) {
+      rows = '<div class="card empty-state">No habits yet.<br><a data-goto-add="1">Add your first habit →</a></div>';
+    }
+
+    return '' +
+      '<div class="card arc-hero">' +
+        '<div class="arc-wrap">' + arcSvg + '</div>' +
+        '<div class="arc-meta">' +
+          '<div class="arc-meta-row"><span>Started</span><b>' + toDMY(state.config.startDate) + '</b></div>' +
+          '<div class="arc-meta-row"><span>Ends</span><b>' + toDMY(state.config.endDate) + '</b></div>' +
+          '<div class="arc-meta-row"><span>Today</span><b>' + doneToday + ' / ' + totalHabits + '</b></div>' +
+          '<div class="hype">' + hypeLine(pctToday) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="stat-grid">' +
+        '<div class="card stat-cell"><div class="stat-chip" style="background:var(--grad-lime)">✅</div><div class="stat-num" style="color:var(--lime)">' + pctToday + '%</div><div class="stat-lbl">today</div></div>' +
+        '<div class="card stat-cell"><div class="stat-chip" style="background:var(--grad-fire)">🔥</div><div class="stat-num" style="color:var(--flame1)">' + bestOfAll + '</div><div class="stat-lbl">best streak</div></div>' +
+        '<div class="card stat-cell"><div class="stat-chip" style="background:var(--grad-cool)">🎯</div><div class="stat-num">' + totalHabits + '</div><div class="stat-lbl">habits</div></div>' +
+      '</div>' +
+      '<div class="section-label">Today\'s check-in</div>' +
+      rows;
+  }
+
+  function buildArc(pct, idx, total){
+    var r = 56, cx = 63, cy = 66;
+    function point(angle){ return [cx + r*Math.cos(angle), cy - r*Math.sin(angle)]; }
+    var p0 = point(Math.PI), p1 = point(0);
+    var bgPath = "M " + p0[0] + " " + p0[1] + " A " + r + " " + r + " 0 0 1 " + p1[0] + " " + p1[1];
+    var sweepAngle = Math.PI - (Math.PI * Math.min(1, Math.max(0, pct)));
+    var pMid = point(sweepAngle);
+    var largeArc = pct > 0.5 ? 1 : 0;
+    var fgPath = "M " + p0[0] + " " + p0[1] + " A " + r + " " + r + " 0 " + largeArc + " 1 " + pMid[0] + " " + pMid[1];
+
+    return '<svg viewBox="0 0 126 76">' +
+      '<defs><linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">' +
+        '<stop offset="0%" stop-color="#8B5CF6"/><stop offset="55%" stop-color="#FF4FA3"/><stop offset="100%" stop-color="#FF8A4C"/>' +
+      '</linearGradient></defs>' +
+      '<path d="' + bgPath + '" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="10" stroke-linecap="round"/>' +
+      (pct > 0 ? '<path d="' + fgPath + '" fill="none" stroke="url(#arcGrad)" stroke-width="10" stroke-linecap="round"/>' : '') +
+      '</svg>' +
+      '<div class="arc-center"><div class="arc-day">' + Math.max(0, idx) + '</div><div class="arc-total">of ' + total + ' days</div></div>';
+  }
+
+  // ---------- habits tab ----------
+  function renderHabitsTab(){
+    var rows = state.habits.map(function(h, i){
+      var streak = currentStreak(h.id);
+      return '<div class="card habit-edit-row">' +
+        '<div class="reorder-col">' +
+          '<button class="reorder-btn" data-up="' + h.id + '" ' + (i === 0 ? "disabled" : "") + '>▲</button>' +
+          '<button class="reorder-btn" data-down="' + h.id + '" ' + (i === state.habits.length-1 ? "disabled" : "") + '>▼</button>' +
+        '</div>' +
+        '<div class="habit-emoji" style="background:' + chipGrad(i) + '">' + h.emoji + '</div>' +
+        '<div class="habit-name">' + escapeHtml(h.name) + '<div class="streak-sub">' + streak + ' day streak</div></div>' +
+        '<button class="edit-btn" data-edit="' + h.id + '">Edit</button>' +
+        '</div>';
+    }).join("");
+
+    if (state.habits.length === 0) {
+      rows = '<div class="card empty-state">No habits yet — add one below.</div>';
+    }
+
+    return '' +
+      '<div class="section-label">Your habits — reorder with ▲▼, tap Edit to rename or restyle. Habits can\'t be deleted, only rearranged.</div>' +
+      rows +
+      '<button class="add-habit-btn" id="add-habit-btn">＋ Add a habit</button>';
+  }
+
+  // ---------- stats tab ---------- (weekly bars + monthly heatmap only)
+  function renderStatsTab(){
+    var bars = "";
+    for (var i = 6; i >= 0; i--) {
+      var d = addDays(new Date(), -i);
+      var ds = fmt(d);
+      var pct = dayCompletionPct(ds);
+      bars += '<div class="weekbar-col">' +
+        '<div class="weekbar-pct">' + (state.habits.length ? pct+"%" : "–") + '</div>' +
+        '<div class="weekbar-track"><div class="weekbar-fill" style="height:' + Math.max(pct,2) + '%"></div></div>' +
+        '<div class="weekbar-lbl">' + dayLabel(d) + '</div>' +
+        '</div>';
+    }
+
+    var now = new Date();
+    var firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    var startOffset = firstOfMonth.getDay();
+    var daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    var heatCells = DOW.map(function(d){ return '<div class="heat-dow">' + d + '</div>'; }).join("");
+    for (var s = 0; s < startOffset; s++) heatCells += '<div class="heat-cell future" style="background:transparent;border-color:transparent;"></div>';
+    for (var day = 1; day <= daysInMonth; day++) {
+      var cellDate = new Date(now.getFullYear(), now.getMonth(), day);
+      var cds = fmt(cellDate);
+      var isFuture = cellDate > now;
+      var p = isFuture ? 0 : dayCompletionPct(cds);
+      var bg = "rgba(255,255,255,.05)", col = "var(--text-faint)";
+      if (!isFuture && state.habits.length) {
+        if (p >= 100) { bg = "var(--grad-lime)"; col = "#0A2010"; }
+        else if (p >= 60) { bg = "linear-gradient(120deg,#8B5CF6,#FF4FA3)"; col = "#fff"; }
+        else if (p > 0) { bg = "rgba(139,92,246,.28)"; col = "var(--text-dim)"; }
+      }
+      heatCells += '<div class="heat-cell ' + (isFuture ? "future":"") + '" style="background:' + bg + ';color:' + col + '">' + day + '</div>';
+    }
+
+    return '' +
+      '<div class="section-label">Last 7 days</div>' +
+      '<div class="card" style="padding:14px;"><div class="weekbars">' + bars + '</div></div>' +
+      '<div class="section-label" style="margin-top:24px;">' + now.toLocaleString('default',{month:'long'}) + '</div>' +
+      '<div class="card" style="padding:14px;"><div class="heatmap">' + heatCells + '</div></div>';
+  }
+
+  // ---------- leaderboard tab ----------
+  function renderLeaderboardTab(){
+    var lb = state.habits.map(function(h){
+      return { h: h, cur: currentStreak(h.id), best: bestStreak(h.id) };
+    }).sort(function(a,b){ return b.cur - a.cur; });
+
+    var lbRows = lb.map(function(row, i){
+      var rankClass = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
+      var rankLabel = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i+1);
+      return '<div class="card leaderboard-row">' +
+        '<div class="lb-rank ' + rankClass + '">' + rankLabel + '</div>' +
+        '<div class="habit-emoji" style="background:' + chipGrad(i) + '">' + row.h.emoji + '</div>' +
+        '<div class="lb-name">' + escapeHtml(row.h.name) + '</div>' +
+        '<div class="lb-nums"><b>' + row.cur + '</b> now · ' + row.best + ' best</div>' +
+        '</div>';
+    }).join("");
+
+    if (lb.length === 0) lbRows = '<div class="card empty-state">Add habits to see streak stats.</div>';
+
+    return '' +
+      '<div class="section-label">Streak leaderboard 🏆 — ranked by current streak</div>' +
+      lbRows;
+  }
+
+  // ---------- form sheet ----------
+  function openHabitForm(habitId){
+    editingHabitId = habitId || null;
+    var habit = editingHabitId ? state.habits.find(function(h){ return h.id === editingHabitId; }) : null;
+    pendingEmoji = habit ? habit.emoji : EMOJI_CHOICES[0];
+
+    var emojiGrid = EMOJI_CHOICES.map(function(e){
+      return '<button class="emoji-opt ' + (e === pendingEmoji ? "sel":"") + '" data-emoji="' + e + '">' + e + '</button>';
+    }).join("");
+
+    document.getElementById("sheet").innerHTML = '' +
+      '<h3>' + (habit ? "Edit habit" : "New habit") + '</h3>' +
+      '<p class="hint">' + (habit ? "Rename it or change its icon. It can\'t be deleted." : "What are you building this arc?") + '</p>' +
+      '<div class="field"><label>Name</label><input id="habit-name-input" maxlength="40" value="' + (habit ? escapeAttr(habit.name) : "") + '" placeholder="e.g. Cold shower" /></div>' +
+      '<div class="field"><label>Icon</label><div class="emoji-grid" id="emoji-grid">' + emojiGrid + '</div></div>' +
+      '<div class="sheet-actions">' +
+        '<button class="btn btn-ghost" id="cancel-btn">Cancel</button>' +
+        '<button class="btn btn-primary" id="save-habit-btn">Save</button>' +
+      '</div>';
+
+    openOverlay();
+
+    document.getElementById("emoji-grid").addEventListener("click", function(ev){
+      var btn = ev.target.closest("[data-emoji]");
+      if (!btn) return;
+      pendingEmoji = btn.dataset.emoji;
+      document.querySelectorAll("#emoji-grid .emoji-opt").forEach(function(b){ b.classList.toggle("sel", b.dataset.emoji === pendingEmoji); });
+    });
+    document.getElementById("cancel-btn").addEventListener("click", closeOverlay);
+    document.getElementById("save-habit-btn").addEventListener("click", function(){
+      var name = document.getElementById("habit-name-input").value.trim();
+      if (!name) { document.getElementById("habit-name-input").focus(); return; }
+      if (editingHabitId) {
+        var h = state.habits.find(function(x){ return x.id === editingHabitId; });
+        h.name = name; h.emoji = pendingEmoji;
+      } else {
+        state.habits.push({ id: uid(), name: name, emoji: pendingEmoji });
+      }
+      scheduleSave();
+      closeOverlay();
+      render();
+    });
+
+    setTimeout(function(){ document.getElementById("habit-name-input").focus(); }, 150);
+  }
+
+  function openArcSettings(){
+    document.getElementById("sheet").innerHTML = '' +
+      '<h3>Arc settings</h3>' +
+      '<p class="hint">Dates use DD-MM-YYYY format.</p>' +
+      '<div class="field"><label>Arc name</label><input id="cfg-title" maxlength="30" value="' + escapeAttr(state.config.title) + '" /></div>' +
+      '<div class="field"><label>Start date</label><input id="cfg-start" type="text" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10" value="' + toDMY(state.config.startDate) + '" /><div class="field-err" id="start-err">Use DD-MM-YYYY, e.g. 01-10-2026</div></div>' +
+      '<div class="field"><label>End date</label><input id="cfg-end" type="text" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10" value="' + toDMY(state.config.endDate) + '" /><div class="field-err" id="end-err">Use DD-MM-YYYY, e.g. 31-12-2026</div></div>' +
+      '<div class="sheet-actions">' +
+        '<button class="btn btn-ghost" id="cancel-cfg-btn">Cancel</button>' +
+        '<button class="btn btn-primary" id="save-cfg-btn">Save</button>' +
+      '</div>' +
+      (FIREBASE_ENABLED && currentUser ? '<button class="btn btn-danger" style="width:100%;margin-top:10px;" id="signout-btn">Sign out</button>' : '');
+
+    openOverlay();
+    autoFormatDateInput(document.getElementById("cfg-start"));
+    autoFormatDateInput(document.getElementById("cfg-end"));
+
+    document.getElementById("cancel-cfg-btn").addEventListener("click", closeOverlay);
+    document.getElementById("save-cfg-btn").addEventListener("click", function(){
+      var title = document.getElementById("cfg-title").value.trim() || "Winter Arc";
+      var startRaw = document.getElementById("cfg-start").value;
+      var endRaw = document.getElementById("cfg-end").value;
+      var startISO = toISO(startRaw);
+      var endISO = toISO(endRaw);
+      var ok = true;
+      document.getElementById("start-err").classList.toggle("show", !startISO); if (!startISO) ok = false;
+      document.getElementById("end-err").classList.toggle("show", !endISO); if (!endISO) ok = false;
+      if (ok && endISO < startISO) { document.getElementById("end-err").textContent = "End date must be after start date"; document.getElementById("end-err").classList.add("show"); ok = false; }
+      if (!ok) return;
+      state.config = { title: title, startDate: startISO, endDate: endISO };
+      scheduleSave();
+      closeOverlay();
+      render();
+    });
+    var soBtn = document.getElementById("signout-btn");
+    if (soBtn) soBtn.addEventListener("click", function(){
+      closeOverlay();
+      fbApi.signOut(fbApi.auth);
+    });
+  }
+
+  function autoFormatDateInput(el){
+    el.addEventListener("input", function(){
+      var digits = el.value.replace(/[^\d]/g,"").slice(0,8);
+      var out = digits;
+      if (digits.length > 4) out = digits.slice(0,2) + "-" + digits.slice(2,4) + "-" + digits.slice(4);
+      else if (digits.length > 2) out = digits.slice(0,2) + "-" + digits.slice(2);
+      el.value = out;
+    });
+  }
+
+  function openOverlay(){ document.getElementById("overlay").classList.add("open"); }
+  function closeOverlay(){ document.getElementById("overlay").classList.remove("open"); }
+
+  // ---------- utils ----------
+  function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function escapeAttr(s){ return escapeHtml(s); }
+
+  // ---------- listeners ----------
+  function mainClickHandler(ev){
+    var toggle = ev.target.closest("[data-toggle]");
+    if (toggle) { toggleToday(toggle.dataset.toggle, toggle); return; }
+    var editBtn = ev.target.closest("[data-edit]");
+    if (editBtn) { openHabitForm(editBtn.dataset.edit); return; }
+    var upBtn = ev.target.closest("[data-up]");
+    if (upBtn && !upBtn.disabled) { moveHabit(upBtn.dataset.up, -1); return; }
+    var downBtn = ev.target.closest("[data-down]");
+    if (downBtn && !downBtn.disabled) { moveHabit(downBtn.dataset.down, 1); return; }
+    var addBtn = ev.target.closest("#add-habit-btn");
+    if (addBtn) { openHabitForm(null); return; }
+    var gotoAdd = ev.target.closest("[data-goto-add]");
+    if (gotoAdd) { state.tab = "habits"; render(); openHabitForm(null); return; }
+  }
+  function attachMainListeners(){
+    var main = document.getElementById("main");
+    var clone = main.cloneNode(true);
+    main.parentNode.replaceChild(clone, main);
+    document.getElementById("main").addEventListener("click", mainClickHandler);
+  }
+
+  document.querySelectorAll(".tab-btn").forEach(function(b){
+    b.addEventListener("click", function(){ state.tab = b.dataset.tab; render(); });
+  });
+  document.getElementById("settings-btn").addEventListener("click", openArcSettings);
+  document.getElementById("overlay").addEventListener("click", function(ev){
+    if (ev.target.id === "overlay") closeOverlay();
+  });
+  document.getElementById("title-input").addEventListener("change", function(){
+    state.config.title = this.value.trim() || "Winter Arc";
+    scheduleSave();
+  });
+
+  function showAccountChip(){
+    if (!currentUser) return;
+    var actions = document.getElementById("head-actions");
+    var chip = document.createElement("div");
+    chip.className = "account-chip";
+    chip.id = "account-chip";
+    chip.innerHTML = (currentUser.photoURL ? '<img src="' + currentUser.photoURL + '" alt="" />' : '') +
+      '<span>' + escapeHtml((currentUser.displayName || currentUser.email || "You").split(" ")[0]) + '</span>';
+    chip.addEventListener("click", openArcSettings);
+    actions.insertBefore(chip, actions.firstChild);
+  }
+
+  function showGate(msg){
+    document.getElementById("signin-gate").style.display = "flex";
+    document.getElementById("gate-error").textContent = msg || "";
+  }
+  function hideGate(){ document.getElementById("signin-gate").style.display = "none"; }
+
+  // ---------- boot ----------
+  async function boot(){
+    if (FIREBASE_ENABLED) {
+      fbApi = await initFirebase();
+    }
+    if (fbApi) {
+      showGate();
+      document.getElementById("google-signin-btn").addEventListener("click", function(){
+        var provider = new fbApi.GoogleAuthProvider();
+        fbApi.signInWithPopup(fbApi.auth, provider).catch(function(err){
+          showGate("Couldn't sign in — " + (err && err.code ? err.code : "try again"));
+        });
+      });
+      fbApi.onAuthStateChanged(fbApi.auth, async function(user){
+        if (user) {
+          currentUser = user;
+          hideGate();
+          await loadFromFirestore();
+          var existingChip = document.getElementById("account-chip");
+          if (existingChip) existingChip.remove();
+          showAccountChip();
+          render();
+        } else {
+          currentUser = null;
+          var chip2 = document.getElementById("account-chip");
+          if (chip2) chip2.remove();
+          showGate();
+        }
+      });
+    } else {
+      await loadFromWindowStorage();
+      render();
+    }
+  }
+
+  boot().catch(function(e){
+    console.error(e);
+    loadFromWindowStorage().then(render);
+  });
+})();
+</script>
+</body>
+</html>
