@@ -80,12 +80,9 @@
     font-size: 24px; font-weight:700; margin:0; letter-spacing:-0.01em;
     display:flex; align-items:center; gap:8px;
   }
-  .brand-title input{
-    background: transparent; border:none; padding:0; width:100%;
-    font: inherit; font-size:24px; font-weight:700; letter-spacing:-0.01em;
+  .brand-title #title-display{
     background-image: var(--grad-brand);
     -webkit-background-clip: text; background-clip:text; color:transparent;
-    caret-color: var(--pink);
   }
   .head-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
   .settings-btn{
@@ -295,7 +292,7 @@
 
   <header class="app-head">
     <div class="brand-row">
-      <h1 class="brand-title">❄️ <input id="title-input" maxlength="30" /></h1>
+      <h1 class="brand-title">❄️ <span id="title-display"></span></h1>
       <div class="head-actions" id="head-actions">
         <button class="settings-btn" id="settings-btn" title="Arc settings">⚙️</button>
       </div>
@@ -380,7 +377,8 @@
         signOut: authMod.signOut,
         doc: storeMod.doc, getDoc: storeMod.getDoc, setDoc: storeMod.setDoc,
         collection: storeMod.collection, getDocs: storeMod.getDocs,
-        query: storeMod.query, orderBy: storeMod.orderBy, limit: storeMod.limit
+        query: storeMod.query, orderBy: storeMod.orderBy, limit: storeMod.limit,
+        onSnapshot: storeMod.onSnapshot
       };
     } catch(e){ console.error("Firebase init failed", e); return null; }
   }
@@ -539,23 +537,31 @@
   }
 
   var leaderboardCache = null;
-  async function fetchGlobalLeaderboard(){
+  var leaderboardUnsub = null;
+
+  function startLeaderboardListener(){
     if (!(fbApi && currentUser)) return;
+    if (leaderboardUnsub) return; // already live
     try {
       var q = fbApi.query(
         fbApi.collection(fbApi.db, "leaderboardPublic"),
         fbApi.orderBy("bestStreak", "desc"),
         fbApi.limit(50)
       );
-      var snap = await fbApi.getDocs(q);
-      var rows = [];
-      snap.forEach(function(d){ rows.push(Object.assign({ uid: d.id }, d.data())); });
-      leaderboardCache = rows;
-      if (state.tab === "leaderboard") {
-        document.getElementById("main").innerHTML = renderGlobalLeaderboardHtml(rows);
-        attachMainListeners();
-      }
-    } catch(e){ console.error("Leaderboard fetch failed", e); }
+      leaderboardUnsub = fbApi.onSnapshot(q, function(snap){
+        var rows = [];
+        snap.forEach(function(d){ rows.push(Object.assign({ uid: d.id }, d.data())); });
+        leaderboardCache = rows;
+        if (state.tab === "leaderboard") {
+          document.getElementById("main").innerHTML = renderGlobalLeaderboardHtml(rows);
+          attachMainListeners();
+        }
+      }, function(err){ console.error("Leaderboard listener failed", err); });
+    } catch(e){ console.error("Leaderboard listener setup failed", e); }
+  }
+
+  function stopLeaderboardListener(){
+    if (leaderboardUnsub) { leaderboardUnsub(); leaderboardUnsub = null; }
   }
 
   function renderGlobalLeaderboardHtml(rows){
@@ -672,7 +678,7 @@
 
   // ---------- render: shell ----------
   function render(){
-    document.getElementById("title-input").value = state.config.title;
+    document.getElementById("title-display").textContent = state.config.title;
     var total = arcTotalDays();
     var idx = Math.max(1, Math.min(arcDayIndex(), total));
     var remain = Math.max(0, total - arcDayIndex());
@@ -828,7 +834,6 @@
   // ---------- leaderboard tab ----------
   function renderLeaderboardTab(){
     if (FIREBASE_ENABLED && currentUser) {
-      fetchGlobalLeaderboard(); // async — patches #main in place once it resolves
       if (leaderboardCache) return renderGlobalLeaderboardHtml(leaderboardCache);
       return '<div class="section-label">Global leaderboard 🏆 — ranked by current streak</div><div class="card empty-state">Loading challengers… ✨</div>';
     }
@@ -907,51 +912,21 @@
   function openArcSettings(){
     document.getElementById("sheet").innerHTML = '' +
       '<h3>Arc settings</h3>' +
-      '<p class="hint">Dates use DD-MM-YYYY format.</p>' +
-      '<div class="field"><label>Arc name</label><input id="cfg-title" maxlength="30" value="' + escapeAttr(state.config.title) + '" /></div>' +
-      '<div class="field"><label>Start date</label><input id="cfg-start" type="text" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10" value="' + toDMY(state.config.startDate) + '" /><div class="field-err" id="start-err">Use DD-MM-YYYY, e.g. 01-10-2026</div></div>' +
-      '<div class="field"><label>End date</label><input id="cfg-end" type="text" inputmode="numeric" placeholder="DD-MM-YYYY" maxlength="10" value="' + toDMY(state.config.endDate) + '" /><div class="field-err" id="end-err">Use DD-MM-YYYY, e.g. 31-12-2026</div></div>' +
-      '<div class="sheet-actions">' +
-        '<button class="btn btn-ghost" id="cancel-cfg-btn">Cancel</button>' +
-        '<button class="btn btn-primary" id="save-cfg-btn">Save</button>' +
+      '<p class="hint">The challenge dates are the same for everyone and can\'t be changed here.</p>' +
+      '<div class="arc-meta-row"><span>Arc name</span><b>' + escapeHtml(state.config.title) + '</b></div>' +
+      '<div class="arc-meta-row"><span>Started</span><b>' + toDMY(state.config.startDate) + '</b></div>' +
+      '<div class="arc-meta-row"><span>Ends</span><b>' + toDMY(state.config.endDate) + '</b></div>' +
+      '<div class="sheet-actions" style="margin-top:18px;">' +
+        '<button class="btn btn-ghost" id="cancel-cfg-btn">Close</button>' +
       '</div>' +
       (FIREBASE_ENABLED && currentUser ? '<button class="btn btn-danger" style="width:100%;margin-top:10px;" id="signout-btn">Sign out</button>' : '');
 
     openOverlay();
-    autoFormatDateInput(document.getElementById("cfg-start"));
-    autoFormatDateInput(document.getElementById("cfg-end"));
-
     document.getElementById("cancel-cfg-btn").addEventListener("click", closeOverlay);
-    document.getElementById("save-cfg-btn").addEventListener("click", function(){
-      var title = document.getElementById("cfg-title").value.trim() || "Winter Arc";
-      var startRaw = document.getElementById("cfg-start").value;
-      var endRaw = document.getElementById("cfg-end").value;
-      var startISO = toISO(startRaw);
-      var endISO = toISO(endRaw);
-      var ok = true;
-      document.getElementById("start-err").classList.toggle("show", !startISO); if (!startISO) ok = false;
-      document.getElementById("end-err").classList.toggle("show", !endISO); if (!endISO) ok = false;
-      if (ok && endISO < startISO) { document.getElementById("end-err").textContent = "End date must be after start date"; document.getElementById("end-err").classList.add("show"); ok = false; }
-      if (!ok) return;
-      state.config = { title: title, startDate: startISO, endDate: endISO };
-      scheduleSave();
-      closeOverlay();
-      render();
-    });
     var soBtn = document.getElementById("signout-btn");
     if (soBtn) soBtn.addEventListener("click", function(){
       closeOverlay();
       fbApi.signOut(fbApi.auth);
-    });
-  }
-
-  function autoFormatDateInput(el){
-    el.addEventListener("input", function(){
-      var digits = el.value.replace(/[^\d]/g,"").slice(0,8);
-      var out = digits;
-      if (digits.length > 4) out = digits.slice(0,2) + "-" + digits.slice(2,4) + "-" + digits.slice(4);
-      else if (digits.length > 2) out = digits.slice(0,2) + "-" + digits.slice(2);
-      el.value = out;
     });
   }
 
@@ -985,15 +960,16 @@
   }
 
   document.querySelectorAll(".tab-btn").forEach(function(b){
-    b.addEventListener("click", function(){ state.tab = b.dataset.tab; render(); });
+    b.addEventListener("click", function(){
+      state.tab = b.dataset.tab;
+      if (state.tab !== "leaderboard") stopLeaderboardListener();
+      render();
+      if (state.tab === "leaderboard") startLeaderboardListener();
+    });
   });
   document.getElementById("settings-btn").addEventListener("click", openArcSettings);
   document.getElementById("overlay").addEventListener("click", function(ev){
     if (ev.target.id === "overlay") closeOverlay();
-  });
-  document.getElementById("title-input").addEventListener("change", function(){
-    state.config.title = this.value.trim() || "Winter Arc";
-    scheduleSave();
   });
 
   function showAccountChip(){
@@ -1038,6 +1014,8 @@
           render();
         } else {
           currentUser = null;
+          stopLeaderboardListener();
+          leaderboardCache = null;
           var chip2 = document.getElementById("account-chip");
           if (chip2) chip2.remove();
           showGate();
