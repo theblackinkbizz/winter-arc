@@ -308,7 +308,7 @@
   </main>
 
   <div class="promo-bar">
-    <a class="promo-btn" href="https://www.stockmarketcoachingindia.com" target="_blank" rel="noopener noreferrer">🚀 Build Your Dreams - Join Now</a>
+    <a class="promo-btn" href="https://wa.me/919978753515?text=Hi%2C%20I%20am%20interested%20in%20joining%20the%20offline%20batch.%20Please%20share%20the%20details." target="_blank" rel="noopener noreferrer">🚀 Build Your Dreams - Join Now</a>
   </div>
 
   <nav class="tabbar">
@@ -378,7 +378,9 @@
         signInWithPopup: authMod.signInWithPopup,
         onAuthStateChanged: authMod.onAuthStateChanged,
         signOut: authMod.signOut,
-        doc: storeMod.doc, getDoc: storeMod.getDoc, setDoc: storeMod.setDoc
+        doc: storeMod.doc, getDoc: storeMod.getDoc, setDoc: storeMod.setDoc,
+        collection: storeMod.collection, getDocs: storeMod.getDocs,
+        query: storeMod.query, orderBy: storeMod.orderBy, limit: storeMod.limit
       };
     } catch(e){ console.error("Firebase init failed", e); return null; }
   }
@@ -498,6 +500,7 @@
           { habits: state.habits, completions: state.completions, config: state.config, updatedAt: Date.now() },
           { merge: true }
         );
+        await persistPublicStats();
       } catch(e){ console.error("Firestore save failed", e); }
     } else {
       try {
@@ -506,6 +509,74 @@
         await window.storage.set(K_CONFIG, JSON.stringify(state.config));
       } catch(e){ console.error("save failed", e); }
     }
+  }
+
+  async function persistPublicStats(){
+    if (!(fbApi && currentUser)) return;
+    var userBestStreak = state.habits.reduce(function(m,h){ return Math.max(m, currentStreak(h.id)); }, 0);
+    var userBestEver = state.habits.reduce(function(m,h){ return Math.max(m, bestStreak(h.id)); }, 0);
+    var pct = (function(){
+      if (state.habits.length === 0) return 0;
+      var rec = state.completions[todayStr()] || {};
+      var count = 0;
+      state.habits.forEach(function(h){ if (rec[h.id]) count++; });
+      return Math.round((count / state.habits.length) * 100);
+    })();
+    try {
+      await fbApi.setDoc(
+        fbApi.doc(fbApi.db, "leaderboardPublic", currentUser.uid),
+        {
+          name: currentUser.displayName || "Anonymous",
+          photoURL: currentUser.photoURL || "",
+          bestStreak: userBestStreak,
+          bestEver: userBestEver,
+          todayPct: pct,
+          updatedAt: Date.now()
+        },
+        { merge: true }
+      );
+    } catch(e){ console.error("Public leaderboard save failed", e); }
+  }
+
+  var leaderboardCache = null;
+  async function fetchGlobalLeaderboard(){
+    if (!(fbApi && currentUser)) return;
+    try {
+      var q = fbApi.query(
+        fbApi.collection(fbApi.db, "leaderboardPublic"),
+        fbApi.orderBy("bestStreak", "desc"),
+        fbApi.limit(50)
+      );
+      var snap = await fbApi.getDocs(q);
+      var rows = [];
+      snap.forEach(function(d){ rows.push(Object.assign({ uid: d.id }, d.data())); });
+      leaderboardCache = rows;
+      if (state.tab === "leaderboard") {
+        document.getElementById("main").innerHTML = renderGlobalLeaderboardHtml(rows);
+        attachMainListeners();
+      }
+    } catch(e){ console.error("Leaderboard fetch failed", e); }
+  }
+
+  function renderGlobalLeaderboardHtml(rows){
+    if (!rows || rows.length === 0) {
+      return '<div class="section-label">Global leaderboard 🏆 — ranked by current streak</div><div class="card empty-state">No one\'s on the board yet — be the first 🚀</div>';
+    }
+    var html = rows.map(function(row, i){
+      var isMe = currentUser && row.uid === currentUser.uid;
+      var rankClass = i === 0 ? "top1" : i === 1 ? "top2" : i === 2 ? "top3" : "";
+      var rankLabel = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i+1);
+      var avatar = row.photoURL
+        ? '<img src="' + row.photoURL + '" style="width:36px;height:36px;border-radius:50%;flex-shrink:0;object-fit:cover;" />'
+        : '<div class="habit-emoji" style="background:var(--grad-cool)">🙂</div>';
+      return '<div class="card leaderboard-row" style="' + (isMe ? "border-color:var(--violet);box-shadow:0 0 0 1.5px var(--violet);" : "") + '">' +
+        '<div class="lb-rank ' + rankClass + '">' + rankLabel + '</div>' +
+        avatar +
+        '<div class="lb-name">' + escapeHtml(row.name || "Anonymous") + (isMe ? ' <span style="color:var(--text-faint);font-weight:500;">(you)</span>' : '') + '</div>' +
+        '<div class="lb-nums"><b>' + (row.bestStreak||0) + '</b> now · ' + (row.bestEver||0) + ' best</div>' +
+        '</div>';
+    }).join("");
+    return '<div class="section-label">Global leaderboard 🏆 — ranked by current streak</div>' + html;
   }
 
   // ---------- streak logic ----------
@@ -756,6 +827,15 @@
 
   // ---------- leaderboard tab ----------
   function renderLeaderboardTab(){
+    if (FIREBASE_ENABLED && currentUser) {
+      fetchGlobalLeaderboard(); // async — patches #main in place once it resolves
+      if (leaderboardCache) return renderGlobalLeaderboardHtml(leaderboardCache);
+      return '<div class="section-label">Global leaderboard 🏆 — ranked by current streak</div><div class="card empty-state">Loading challengers… ✨</div>';
+    }
+    return renderPersonalLeaderboardTab();
+  }
+
+  function renderPersonalLeaderboardTab(){
     var lb = state.habits.map(function(h){
       return { h: h, cur: currentStreak(h.id), best: bestStreak(h.id) };
     }).sort(function(a,b){ return b.cur - a.cur; });
